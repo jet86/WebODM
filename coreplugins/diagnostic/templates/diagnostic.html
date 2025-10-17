@@ -5,6 +5,8 @@
 <script src="./Chart.min.js"></script>
 <h2>{% trans 'Diagnostic Information' %}</h2>
 
+<!--
+
 <div class="row text-center">
     <div class="col-md-4 col-sm-12">
         <h4>{% trans 'Storage Space' %}</h4>
@@ -29,6 +31,8 @@
 </div>
 
 <hr/>
+
+-->
 
 <div class="row text-center">
     <div class="col-md-4 col-sm-12">
@@ -65,6 +69,9 @@
 <div style="margin-top: 20px;"><strong>{% trans 'Note!' %}</strong> {% blocktrans with win_hyperv_link="<a href='https://docs.docker.com/desktop/settings/windows/#resources'>Windows (Hyper-V)</a>" win_wsl2_link="<a href='https://learn.microsoft.com/en-us/windows/wsl/wsl-config#configuration-setting-for-wslconfig'>Windows (WSL2)</a>" mac_link="<a href='https://docs.docker.com/desktop/settings/mac/#resources'>MacOS</a>" %}These values might be relative to the virtualization environment in which the application is running, not necessarily the values of the your machine. See instructions for {{ win_hyperv_link }}, {{ win_wsl2_link }}, and {{ mac_link }} for changing these values in a Docker setup.{% endblocktrans %}</div>
 
 <script>
+
+/*
+
 (function(){
     var ctx = document.getElementById('diskChartOld').getContext('2d');
     var labels = {
@@ -134,6 +141,8 @@
     });
 })();
 {% endif %}
+
+*/
 
 (function(){
     var ctx = document.getElementById('diskChart').getContext('2d');
