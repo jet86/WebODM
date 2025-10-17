@@ -53,7 +53,7 @@ class ImportTaskPanel extends React.Component {
           clickable: this.uploadButton,
           timeout: 2147483647,
           chunking: true,
-          chunkSize: 16000000, // 16MB,
+          chunkSize: 8000000, // 8MB,
           retryChunks: true,
           retryChunksLimit: 20,
           headers: {
@@ -141,8 +141,12 @@ class ImportTaskPanel extends React.Component {
         this.setState({error: json.error || interpolate(_("Invalid JSON response: %(error)s"), {error: JSON.stringify(json)})});
       }
     })
-    .fail(() => {
-        this.setState({importingFromUrl: false, error: _("Cannot import from URL. Check your internet connection.")});
+    .fail((e) => {
+      let error = _("Cannot import from URL. Check your internet connection.");
+      if (e && e.responseJSON && Array.isArray(e.responseJSON) && e.responseJSON.length && typeof e.responseJSON[0] === 'string'){
+        error = e.responseJSON[0];
+      }
+      this.setState({importingFromUrl: false, error});
     });
   }
 

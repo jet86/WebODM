@@ -152,6 +152,7 @@ class ModelView extends React.Component {
       error: "",
       showingTexturedModel: false,
       initializingModel: false,
+      texModelLoadProgress: null,
       selectedCamera: null,
       modalOpen: false
     };
@@ -162,8 +163,12 @@ class ModelView extends React.Component {
     this.cameraMeshes = [];
   }
 
+  basePath = () => {
+    return `/api/projects/${this.props.task.project}/tasks/${this.props.task.id}`;
+  }
+
   assetsPath = () => {
-    return `/api/projects/${this.props.task.project}/tasks/${this.props.task.id}/assets`
+    return `${this.basePath()}/assets`;
   }
 
   urlExists = (url, cb) => {
@@ -268,7 +273,7 @@ class ModelView extends React.Component {
   }
 
   glbFilePath = () => {
-    return this.texturedModelDirectoryPath() + 'odm_textured_model_geo.glb';
+    return this.basePath() + '/textured_model/';
   }
 
   mtlFilename = (cb) => {
@@ -363,6 +368,9 @@ class ModelView extends React.Component {
             this.setState({error: "Could not load point cloud. This task doesn't seem to have one. Try processing the task again."});
             return;
           }
+          
+          // Set crop vertices if needed
+          e.pointcloud.material.cropVertices = this.getCropCoordinates();
 
           // Automatically load 3D model if required
           if (this.hasTexturedModel() && this.props.modelType === "mesh"){
@@ -469,12 +477,22 @@ class ModelView extends React.Component {
 
     viewer.renderer.domElement.addEventListener( 'mousedown', this.handleRenderMouseClick );
     viewer.renderer.domElement.addEventListener( 'mousemove', this.handleRenderMouseMove );
+    viewer.renderer.domElement.addEventListener( 'touchstart', this.handleRenderTouchStart );
     
+  }
+
+  getCropCoordinates(){
+    if (this.props.task.crop_projected && this.props.task.crop_projected.length >= 3){
+        return this.props.task.crop_projected.map(coord => {
+            return new THREE.Vector3(coord[0], coord[1], 0.0);
+        });
+    }
   }
 
   componentWillUnmount(){
     viewer.renderer.domElement.removeEventListener( 'mousedown', this.handleRenderMouseClick );
     viewer.renderer.domElement.removeEventListener( 'mousemove', this.handleRenderMouseMove );
+    viewer.renderer.domElement.removeEventListener( 'touchstart', this.handleRenderTouchStart );
     
   }
 
@@ -519,6 +537,12 @@ class ModelView extends React.Component {
         viewer.renderer.domElement.classList.remove("pointer-cursor");
     }
     this._prevCamera = camera;
+  }
+
+  handleRenderTouchStart = (evt) => {
+    if (evt.touches.length === 1){
+        this.handleRenderMouseClick({clientX: evt.touches[0].clientX, clientY: evt.touches[0].clientY});
+    }
   }
 
   handleRenderMouseClick = (evt) => {
@@ -629,7 +653,7 @@ class ModelView extends React.Component {
     });
   }
 
-  loadGltf = (url, cb) => {
+  loadGltf = (url, cb, onProgress) => {
     if (!this.gltfLoader) this.gltfLoader = new THREE.GLTFLoader();
     if (!this.dracoLoader) {
         this.dracoLoader = new THREE.DRACOLoader();
@@ -640,10 +664,9 @@ class ModelView extends React.Component {
     // Load a glTF resource
     this.gltfLoader.load(url,
         gltf => { cb(null, gltf) },
-        xhr => {
-            // called while loading is progressing
-        },
-        error => { cb(error); }
+        onProgress,
+        error => { cb(error); },
+        {crop: this.getCropCoordinates()}
     );
   }
 
@@ -677,14 +700,20 @@ class ModelView extends React.Component {
                     this.setState({initializingModel: false, error: err});
                     return;
                 }
-
-                const offset = {x: 0, y: 0};
-                if (gltf.scene.CESIUM_RTC && gltf.scene.CESIUM_RTC.center){
-                    offset.x = gltf.scene.CESIUM_RTC.center[0];
-                    offset.y = gltf.scene.CESIUM_RTC.center[1];
-                }
-
-                addObject(gltf.scene, offset);
+                this.setState({texModelLoadProgress: null});
+                
+                setTimeout(() => {
+                    const offset = {x: 0, y: 0};
+                    if (gltf.scene.CESIUM_RTC && gltf.scene.CESIUM_RTC.center){
+                        offset.x = gltf.scene.CESIUM_RTC.center[0];
+                        offset.y = gltf.scene.CESIUM_RTC.center[1];
+                    }
+    
+                    addObject(gltf.scene, offset);
+                }, 0);
+            }, xhr => {
+                const progress = Math.round((xhr.loaded / xhr.total) * 100);
+                this.setState({texModelLoadProgress: progress});
             });
         }else{
             // Legacy OBJ
@@ -771,6 +800,7 @@ class ModelView extends React.Component {
           <Standby 
             message={_("Loading textured model...")}
             show={this.state.initializingModel}
+            progress={this.state.texModelLoadProgress}
             />
       </div>);
   }
@@ -798,4 +828,3 @@ $(function(){
 });
 
 export default ModelView;
-    

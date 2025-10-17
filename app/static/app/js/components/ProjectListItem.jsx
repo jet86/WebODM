@@ -138,15 +138,18 @@ class ProjectListItem extends React.Component {
       this.dz = new Dropzone(this.dropzone, {
           paramName: "images",
           url : 'TO_BE_CHANGED',
-          parallelUploads: 6,
+          parallelUploads: 4,
           uploadMultiple: false,
-          acceptedFiles: "image/*,text/plain,.las,.laz,video/*,.srt",
+          acceptedFiles: "image/*,text/plain,.las,.laz,video/*,.srt,.dng,.nef",
           autoProcessQueue: false,
           createImageThumbnails: false,
           clickable: this.uploadButton,
           maxFilesize: 131072, // 128G
-          chunkSize: 2147483647,
           timeout: 2147483647,
+          chunking: true,
+          chunkSize: 8000000, // 8MB,
+          retryChunks: true,
+          retryChunksLimit: 20,
           
           headers: {
             [csrf.header]: csrf.token
@@ -224,6 +227,10 @@ class ProjectListItem extends React.Component {
             const retry = () => {
                 const MAX_RETRIES = 20;
 
+                if (!file.accepted){
+                  throw new Error(interpolate(_('%(filename)s is not a valid file'), {filename: file.name }));
+                }
+
                 if (file.retries < MAX_RETRIES){
                     // Update progress
                     const totalBytesSent = this.state.upload.totalBytesSent - file.trackedBytesSent;
@@ -260,7 +267,8 @@ class ProjectListItem extends React.Component {
                 }else{
                     // Check response
                     let response = JSON.parse(file.xhr.response);
-                    if (response.success && response.uploaded && response.uploaded[file.upload.filename] === file.size){
+                    if (response.success){
+                      if (response.uploaded && response.uploaded[file.upload.filename] === file.size){
                         // Update progress by removing the tracked progress and 
                         // use the file size as the true number of bytes
                         let totalBytesSent = this.state.upload.totalBytesSent + file.size;
@@ -273,8 +281,11 @@ class ProjectListItem extends React.Component {
                             totalBytesSent,
                             uploadedCount: this.state.upload.uploadedCount + 1
                         });
+                      }else{
+                        // Chunk success, wait for end
+                      }
 
-                        this.dz.processQueue();
+                      this.dz.processQueue();
                     }else{
                         retry();
                     }
@@ -418,7 +429,8 @@ class ProjectListItem extends React.Component {
         options: taskInfo.options,
         processing_node:  taskInfo.selectedNode.id,
         auto_processing_node: taskInfo.selectedNode.key == "auto",
-        partial: true
+        partial: true,
+        align_to: taskInfo.alignTo
     };
 
     if (taskInfo.resizeMode === ResizeModes.YES){
@@ -780,6 +792,8 @@ class ProjectListItem extends React.Component {
               suggestedTaskName={this.handleTaskTitleHint}
               filesCount={this.state.upload.totalCount}
               showResize={true}
+              showAlign={numTasks > 0}
+              projectId={this.state.data.id}
               getFiles={() => this.state.upload.files }
             />
           : ""}
