@@ -144,6 +144,40 @@
 
 */
 
+function chartMemory(){
+    var ctx = document.getElementById('memoryChart').getContext('2d');
+    var labels = {
+        "{% trans 'Used' context 'Megabytes of memory space' %}": '{{ used_memory|filesizeformat }}',
+        "{% trans 'Available' context 'Megabytes of memory space' %}": '{{ free_memory|filesizeformat }}'
+    };
+    var chart = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: ["{% trans 'Used' context 'Megabytes of memory space' %}", "{% trans 'Available' context 'Megabytes of memory space' %}"],
+            datasets: [{
+                label: "{% trans 'Memory' context 'Computer memory (RAM)' %}",
+                backgroundColor:[
+                    "rgb(255, 99, 132)",
+                    "rgb(54, 162, 235)"
+                ],
+                data: [ {{ used_memory }}, {{ free_memory }} ],
+            }]
+        },
+        options: {
+            legend:{
+                reverse: true
+            },
+            tooltips: {
+                callbacks: {
+                    label: function(tooltipItem, data) {
+                        return labels[data.labels[tooltipItem.index]];
+                    }
+                }
+            }
+        }
+    });
+}
+
 (function(){
     var ctx = document.getElementById('diskChart').getContext('2d');
     var labels = {
@@ -178,6 +212,7 @@
     });
 })();
 
+/*
 (function(){
     var ctx = document.getElementById('memoryChart').getContext('2d');
     var labels = {
@@ -211,6 +246,7 @@
         }
     });
 })();
+*/
 
 (function(){
     var ctx = document.getElementById('swapChart').getContext('2d');
@@ -245,5 +281,12 @@
         }
     });
 })();
+
+console.log("Reached here.");
+
+setInterval(function() {
+  console.log("6 secondly update.");
+  chartMemory();
+}, 6 * 1000);
 </script>
 {% endblock %}
