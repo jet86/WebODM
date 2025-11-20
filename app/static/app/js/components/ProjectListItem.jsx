@@ -147,7 +147,7 @@ class ProjectListItem extends React.Component {
           maxFilesize: 131072, // 128G
           timeout: 2147483647,
           chunking: true,
-          chunkSize: 4000000, // 4MB,
+          chunkSize: 8000000, // 8MB,
           retryChunks: true,
           retryChunksLimit: 20,
           
