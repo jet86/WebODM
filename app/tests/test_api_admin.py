@@ -280,7 +280,7 @@ class TestApiAdmin(BootTestCase):
         )
 
         # Create a mock project for the impersonated user
-        impersonated_project = Project.objects.create(
+        Project.objects.create(
             owner=impersonated_user,
             name='Impersonated Project'
         )
@@ -304,7 +304,7 @@ class TestApiAdmin(BootTestCase):
         # Super user can impersonate
 
         # Create a mock project for admin user
-        impersonated_project = Project.objects.create(
+        Project.objects.create(
             owner=User.objects.get(username='testsuperuser'),
             name='Admin Project'
         )
