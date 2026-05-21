@@ -11,7 +11,7 @@ from .imageuploads import Thumbnail, ImageDownload
 from .processingnodes import ProcessingNodeViewSet, ProcessingNodeOptionsView
 from .admin import AdminUserViewSet, AdminGroupViewSet, AdminProfileViewSet
 from rest_framework_nested import routers
-from rest_framework_jwt.views import obtain_jwt_token
+from .jwt import obtain_jwt_token
 from .tiler import TileJson, Bounds, Metadata, Tiles, Export
 from .potree import Scene, CameraView
 from .workers import CheckTask, GetTaskResult

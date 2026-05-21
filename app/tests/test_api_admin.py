@@ -7,9 +7,10 @@ from django.contrib.auth.hashers import check_password
 
 from .classes import BootTestCase
 from app.api.admin import UserSerializer, GroupSerializer
+from app.models import Project
 
 
-class TestApi(BootTestCase):
+class TestApiAdmin(BootTestCase):
     def setUp(self):
         pass
 
@@ -268,3 +269,62 @@ class TestApi(BootTestCase):
         res = client.post('/api/admin/profiles/%s/update_quota_deadline/' % user.id, data={'hours': 0})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertTrue(abs(user.profile.get_quota_deadline() - time.time()) < 10)
+
+    def test_impersonation(self):
+        client = APIClient()
+        
+        # Create a test user to impersonate
+        impersonated_user = User.objects.create_user(
+            username='impersonateduser',
+            password='test1234',
+        )
+
+        # Create a mock project for the impersonated user
+        impersonated_project = Project.objects.create(
+            owner=impersonated_user,
+            name='Impersonated Project'
+        )
+        
+        # Regular user can get token, but can't impersonate
+        user_name = 'testuser'
+        user_pass = 'test1234'
+        res = client.post('/api/token-auth/', {
+            'username': user_name,
+            'password': user_pass,
+        })
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+
+        res = client.post('/api/token-auth/', {
+            'username': user_name,
+            'password': user_pass,
+            'impersonate': 'impersonateduser'
+        })
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        
+        # Super user can impersonate
+
+        # Create a mock project for admin user
+        impersonated_project = Project.objects.create(
+            owner=User.objects.get(username='testsuperuser'),
+            name='Admin Project'
+        )
+
+        client = APIClient()
+        res = client.post('/api/token-auth/', {
+            'username': 'testsuperuser',
+            'password': 'test1234',
+            'impersonate': 'impersonateduser'
+        })
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        impersonated_token = res.data['token']
+        
+        # Use impersonated token to access projects
+        # Projects should be filtered by impersonated user
+        impersonated_client = APIClient(HTTP_AUTHORIZATION="{0} {1}".format(api_settings.JWT_AUTH_HEADER_PREFIX, impersonated_token))
+        
+        res = impersonated_client.get('/api/projects/')
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        
+        # Verify the response contains only projects owned by impersonated user
+        self.assertEqual(len(res.data), 1)
+        self.assertTrue(res.data[0]['name'] == 'Impersonated Project')
