@@ -1,6 +1,5 @@
 import urllib3.util.connection as ul3conn
 import dns.resolver
-import requests
 from webodm import settings
 
 dns_cache = {}
@@ -26,7 +25,7 @@ def patch_dns_resolution():
     ul3conn.create_connection = create_connection_custom_dns
     patched = True
 
-    return True # Succes
+    return True # Success
 
 def create_connection_custom_dns(address, *args, **kwargs):
     host, port = address
@@ -34,7 +33,7 @@ def create_connection_custom_dns(address, *args, **kwargs):
         resolved = dns_cache[host]
     else:
         resolver = dns.resolver.Resolver()
-        resolver.nameservers = ['8.8.8.8', '1.1.1.1'] # Google, Cloudflare
+        resolver.nameservers = settings.DNS_RESOLUTION_FALLBACK_NS
         try:
             answers = resolver.resolve(host, 'A')
             resolved = answers[0].to_text()

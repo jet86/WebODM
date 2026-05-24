@@ -1,7 +1,6 @@
 from django.test import TestCase
 from app import net
 import urllib3.util.connection as ul3conn
-from unittest.mock import patch, MagicMock
 import requests
 
 
@@ -11,8 +10,11 @@ class TestNet(TestCase):
 
     def test_net_functions(self):
         from webodm import settings
-        
+
+        # DNS fallback turned off by default
+        self.assertFalse(settings.DNS_RESOLUTION_FALLBACK)
         self.assertFalse(net.is_dns_resolution_problem(Exception("[Errno 11002] Lookup timed out")))
+
         settings.DNS_RESOLUTION_FALLBACK = True
         self.assertTrue(net.is_dns_resolution_problem(Exception("[Errno 11002] Lookup timed out")))
         self.assertFalse(net.is_dns_resolution_problem(Exception("Some other error")))
@@ -33,3 +35,5 @@ class TestNet(TestCase):
         r = requests.get("https://webodm.org")
         self.assertEqual(r.status_code, 200)
         self.assertTrue('webodm.org' in net.dns_cache)
+
+        settings.DNS_RESOLUTION_FALLBACK = False
