@@ -37,3 +37,9 @@ class TestNet(TestCase):
         self.assertTrue('webodm.org' in net.dns_cache)
 
         settings.DNS_RESOLUTION_FALLBACK = None
+        self.assertTrue(net.unpatch_dns_resolution())
+        self.assertEqual(ul3conn.create_connection, net.create_connection_orig)
+        self.assertFalse(net.patched)
+
+        # Already unpatched
+        self.assertFalse(net.unpatch_dns_resolution())

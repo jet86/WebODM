@@ -27,7 +27,20 @@ def patch_dns_resolution():
 
     return True # Success
 
+def unpatch_dns_resolution():
+    global patched
+    if not patched:
+        return False
+    
+    ul3conn.create_connection = create_connection_orig
+    patched = False
+
+    return True # Success
+
 def create_connection_custom_dns(address, *args, **kwargs):
+    if not settings.DNS_RESOLUTION_FALLBACK:
+        return create_connection_orig(address, *args, **kwargs)
+
     host, port = address
     if host in dns_cache:
         resolved = dns_cache[host]
