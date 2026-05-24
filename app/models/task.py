@@ -37,6 +37,7 @@ from urllib3.exceptions import ReadTimeoutError
 from app import pending_actions
 from django.contrib.gis.db.models.fields import GeometryField
 
+from app.net import patch_dns_resolution, is_dns_resolution_problem
 from app.cogeo import assure_cogeo
 from app.pointcloud_utils import is_pointcloud_georeferenced
 from app.testwatch import testWatch
@@ -954,7 +955,10 @@ class Task(models.Model):
                         self.save()
 
         except (NodeServerError, NodeResponseError) as e:
-            self.set_failure(str(e))
+            if is_dns_resolution_problem(e) and patch_dns_resolution():
+                logger.warning("{} DNS resolution failed with {}, we're going to attempt to patch the DNS resolution process and retry...".format(self, str(e)))
+            else:
+                self.set_failure(str(e))
         except NodeConnectionError as e:
             logger.warning("{} connection/timeout error: {}. We'll try reprocessing at the next tick.".format(self, str(e)))
         except TaskInterruptedException as e:
