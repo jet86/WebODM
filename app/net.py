@@ -9,7 +9,7 @@ create_connection_orig = ul3conn.create_connection
 
 def is_dns_resolution_problem(e):
     if settings.DNS_RESOLUTION_FALLBACK:
-        return "[Errno 11002] Lookup timed out" in str(e)
+        return "[Errno 11002] Lookup timed out" in str(e) #or "[Errno 111] Connection refused" in str(e)
     return False
 
 def patch_dns_resolution():
@@ -29,18 +29,18 @@ def patch_dns_resolution():
     return True # Succes
 
 def create_connection_custom_dns(address, *args, **kwargs):
-    
     host, port = address
     if host in dns_cache:
-        return dns_cache[host]
-    
-    resolver = dns.resolver.Resolver()
-    resolver.nameservers = ['8.8.8.8', '1.1.1.1'] # Google, Cloudflare
-    try:
-        answers = resolver.resolve(host, 'A')
-        resolved = answers[0].to_text()
-        dns_cache[host] = resolved
-    except Exception:
-        resolved = host
+        resolved = dns_cache[host]
+    else:
+        resolver = dns.resolver.Resolver()
+        resolver.nameservers = ['8.8.8.8', '1.1.1.1'] # Google, Cloudflare
+        try:
+            answers = resolver.resolve(host, 'A')
+            resolved = answers[0].to_text()
+            dns_cache[host] = resolved
+        except Exception:
+            resolved = host
+
     return create_connection_orig((resolved, port), *args, **kwargs)
 
