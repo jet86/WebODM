@@ -12,10 +12,10 @@ class TestNet(TestCase):
         from webodm import settings
 
         # DNS fallback turned off by default
-        self.assertFalse(settings.DNS_RESOLUTION_FALLBACK)
+        self.assertIsNone(settings.DNS_RESOLUTION_FALLBACK)
         self.assertFalse(net.is_dns_resolution_problem(Exception("[Errno 11002] Lookup timed out")))
 
-        settings.DNS_RESOLUTION_FALLBACK = True
+        settings.DNS_RESOLUTION_FALLBACK = ["8.8.8.8"]
         self.assertTrue(net.is_dns_resolution_problem(Exception("[Errno 11002] Lookup timed out")))
         self.assertFalse(net.is_dns_resolution_problem(Exception("Some other error")))
         
@@ -36,4 +36,4 @@ class TestNet(TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertTrue('webodm.org' in net.dns_cache)
 
-        settings.DNS_RESOLUTION_FALLBACK = False
+        settings.DNS_RESOLUTION_FALLBACK = None

@@ -33,7 +33,7 @@ def create_connection_custom_dns(address, *args, **kwargs):
         resolved = dns_cache[host]
     else:
         resolver = dns.resolver.Resolver()
-        resolver.nameservers = settings.DNS_RESOLUTION_FALLBACK_NS
+        resolver.nameservers = settings.DNS_RESOLUTION_FALLBACK
         try:
             answers = resolver.resolve(host, 'A')
             resolved = answers[0].to_text()
