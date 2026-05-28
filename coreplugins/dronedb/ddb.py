@@ -193,12 +193,14 @@ class DroneDB:
         except Exception as e:
             raise Exception("Failed to get files list.") from e
 
-    def share_init(self, tag=None, dataset_name=None):
+    def share_init(self, tag=None, org_slug=None, dataset_name=None):
         try:
 
             data = {}
             if tag is not None:
                 data['tag'] = tag
+            if org_slug is not None:
+                data['orgSlug'] = org_slug
             if dataset_name is not None:
                 data['datasetName'] = dataset_name
 

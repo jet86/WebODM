@@ -104,14 +104,14 @@ export default class ShareButton extends React.Component {
 
     shareToDdb = (options = {}) => {
         const { task } = this.props;
-        const { tag, datasetName } = options;
+        const { tag, orgSlug, datasetName } = options;
 
         this.setState({ showDialog: false });
 
         return $.ajax({
             url: `/api/plugins/dronedb/tasks/${task.id}/share`,
             contentType: 'application/json',
-            data: JSON.stringify({ tag, datasetName }),
+            data: JSON.stringify({ tag, orgSlug, datasetName }),
             dataType: 'json',
             type: 'POST'
         }).done(taskInfo => {

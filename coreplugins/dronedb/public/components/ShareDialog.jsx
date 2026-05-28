@@ -192,22 +192,22 @@ export default class ShareDialog extends Component {
         const { shareMode, selectedOrganization, selectedDataset, newDatasetName, createNewDataset } = this.state;
 
         let tag = null;
+        let orgSlug = null;
         let datasetName = null;
 
         if (shareMode === SHARE_MODE_SELECT && selectedOrganization) {
             if (createNewDataset) {
-                // Will create new dataset in selected org
-                // tag format: "org/" means create new dataset in org
-                tag = selectedOrganization.value;
+                // Will create new dataset in selected org — send orgSlug separately, not as tag
+                orgSlug = selectedOrganization.value;
                 datasetName = newDatasetName || this.props.taskName || null;
             } else if (selectedDataset && selectedDataset.value !== '__new__') {
-                // Use existing dataset
+                // Use existing dataset — send as "org/dataset" tag
                 tag = `${selectedOrganization.value}/${selectedDataset.value}`;
             }
         }
-        // If SHARE_MODE_QUICK, tag remains null (backend creates personal org + random dataset)
+        // If SHARE_MODE_QUICK, both tag and orgSlug remain null (backend creates personal org + random dataset)
 
-        this.props.onShare({ tag, datasetName });
+        this.props.onShare({ tag, orgSlug, datasetName });
     };
 
     getTotalSize() {
