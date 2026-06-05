@@ -65,7 +65,7 @@ def oidc_login(request, provider_index):
         'response_type': 'code',
         'client_id': provider['client_id'],
         'redirect_uri': callback_url,
-        'scope': 'openid email',
+        'scope': 'openid email profile',
         'state': state,
     }
 
@@ -149,6 +149,9 @@ def oidc_callback(request):
         messages.warning(request, _('SSO login failed.'))
         return redirect(settings.LOGIN_URL)
 
+    given_name = claims.get('given_name')
+    family_name = claims.get('family_name')
+    
     # Check if it's authorized
     authorized = True
     if settings.OIDC_AUTH_EMAILS:
@@ -174,6 +177,12 @@ def oidc_callback(request):
                 user = User.objects.create_user(username=email)
                 user.profile.oidc_sub = subject
                 user.profile.save()
+                user.email = email
+                if given_name:
+                    user.first_name = given_name
+                if family_name:
+                    user.last_name = family_name
+                user.save()
             except IntegrityError:
                 messages.warning(request, _('Cannot create user. A username already exists with the same e-mail.'))
                 return redirect(settings.LOGIN_URL)
