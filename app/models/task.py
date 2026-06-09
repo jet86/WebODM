@@ -735,6 +735,11 @@ class Task(models.Model):
             if self.processing_node:
                 # Need to process some images (UUID not yet set and task doesn't have pending actions)?
                 if not self.uuid and self.pending_action is None and self.status is None:
+                    
+                    # Check that task's owner can use this processing ndoe
+                    if not self.project.owner.has_perm("view_processingnode", self.processing_node):
+                        raise NodeServerError(gettext("Invalid processing node selected"))
+                    
                     logger.info("Processing... {}".format(self))
 
                     images_path = self.task_path()
