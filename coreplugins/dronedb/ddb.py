@@ -155,13 +155,30 @@ class DroneDB:
     def get_folders(self, orgSlug, dsSlug):
 
         try:
+            import posixpath
 
-            # Type 1 is folder
-            payload = {'query': '*', 'recursive': True, 'type': 1}
+            # Search all entries recursively (no type filter)
+            payload = {'query': '*', 'recursive': True}
 
             response = self.wrapped_call('POST', self.__get_folders_url.format(orgSlug, dsSlug), data=payload)
 
-            return [o['path'] for o in response.json()]
+            entries = response.json()
+            dirs = set()
+
+            for o in entries:
+                path = o.get('path', '')
+                entry_type = o.get('type', 0)
+
+                # Include explicit Directory entries (type=1)
+                if entry_type == 1 and path:
+                    dirs.add(path)
+                else:
+                    # Infer parent directory from file path
+                    parent = posixpath.dirname(path)
+                    if parent and parent != '.':
+                        dirs.add(parent)
+
+            return sorted(dirs)
 
         except Exception as e:
             raise Exception("Failed to get folders.") from e

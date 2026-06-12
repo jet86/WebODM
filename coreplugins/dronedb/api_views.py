@@ -394,11 +394,11 @@ class ShareTaskView(TaskView):
 def share_to_ddb(pk, settings, files, tag=None, org_slug=None, dataset_name=None):
     import os, time
     from app.plugins import logger
-    from app.plugins import get_current_plugin
+    from app.plugins.functions import get_plugin_by_name
     from coreplugins.dronedb.ddb import DroneDB
 
     status_key = '{}_ddb'.format(pk)
-    datastore = get_current_plugin().get_global_data_store()
+    datastore = get_plugin_by_name('dronedb').get_global_data_store()
 
     registry_url, username, password, token = settings
 
