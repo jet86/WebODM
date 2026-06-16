@@ -181,11 +181,6 @@ def oidc_callback(request):
                 user = User.objects.create_user(username=email)
                 user.profile.oidc_sub = subject
                 user.profile.save()
-                if settings.OIDC_UPDATE_PROFILE:
-                    user.email = email
-                    user.first_name = given_name
-                    user.last_name = family_name
-                    user.save()
             except IntegrityError:
                 messages.warning(request, _('Cannot create user. A username already exists with the same e-mail.'))
                 return redirect(settings.LOGIN_URL)
@@ -193,6 +188,12 @@ def oidc_callback(request):
     if not user.is_active:
         messages.warning(request, _('This account is disabled. Please contact an administrator.'))
         return redirect(settings.LOGIN_URL)
+    
+    if settings.OIDC_UPDATE_PROFILE:
+        user.email = email
+        user.first_name = given_name
+        user.last_name = family_name
+        user.save()
 
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
