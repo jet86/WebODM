@@ -2,7 +2,7 @@ from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from django.utils.translation import ugettext as _
 from rest_framework_jwt.settings import api_settings
-from rest_framework_jwt.views import JSONWebTokenAPIView
+from rest_framework_jwt.views import JSONWebTokenAPIView, RefreshJSONWebToken
 from rest_framework_jwt.compat import Serializer, PasswordField
 from rest_framework import serializers
 
@@ -49,7 +49,8 @@ class JSONWebTokenSerializer(Serializer):
                             'user': impersonated
                         }
                     except:
-                        raise serializers.ValidationError(_('Unable to log in with provided credentials.'))
+                        msg = _('Unable to log in with provided credentials.')
+                        raise serializers.ValidationError({'non_field_errors': msg, 'impersonate': "Invalid"})
                 else:
                     return {
                         'token': jwt_encode_handler(jwt_payload_handler(user)),
@@ -70,3 +71,4 @@ class ObtainJSONWebToken(JSONWebTokenAPIView):
     serializer_class = JSONWebTokenSerializer
 
 obtain_jwt_token = ObtainJSONWebToken.as_view()
+refresh_jwt_token = RefreshJSONWebToken.as_view()
