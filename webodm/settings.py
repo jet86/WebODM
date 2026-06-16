@@ -370,6 +370,10 @@ OIDC_AUTH_PROVIDERS = []
 # e.g. ["@myorg.com", "exactuser@otherorg.com"]
 OIDC_AUTH_EMAILS = None
 
+# When turned on, updates the user's profile information in WebODM from OIDC profile data
+# Will additionally request the profile OIDC scope
+OIDC_UPDATE_PROFILE = False
+
 # Enable cluster mode for this instance by setting an integer ID >= 1
 CLUSTER_ID = None
 
