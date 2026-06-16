@@ -148,6 +148,15 @@ class MapView extends React.Component {
     // If we have only one button, hide it...
     if (mapTypeButtons.length === 1) mapTypeButtons = [];
 
+    // Requested page for map without map items
+    if (this.state.tiles.length === 0){
+      return (<div className="map-view">
+        <div className="alert alert-info" style={{marginTop: this.props.public ? "24px" : "0px"}}>
+         <i className="fa fa-info-circle"></i> {_("A map is not available for this task or project.")}
+        </div>
+      </div>);
+    }
+
     return (<div className="map-view">
         <div className="map-view-header">
           {this.props.title ?

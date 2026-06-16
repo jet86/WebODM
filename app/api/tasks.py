@@ -715,6 +715,7 @@ class TaskAssetsImport(APIView):
         files = flatten_files(request.FILES)
         import_url = request.data.get('url', None)
         task_name = request.data.get('name', _('Imported Task'))
+        public = bool(serializers.BooleanField(default=False, allow_null=True).to_internal_value(request.data.get('public', '')))
 
         if not import_url and len(files) != 1:
             raise exceptions.ValidationError(detail=_("Cannot create task, you need to upload 1 file"))
@@ -766,6 +767,7 @@ class TaskAssetsImport(APIView):
                                             name=task_name,
                                             import_url=import_url if import_url else "file://all.zip",
                                             status=status_codes.RUNNING,
+                                            public=public,
                                             pending_action=pending_actions.IMPORT)
             task.create_task_directories()
             destination_file = task.assets_path("all.zip")
@@ -783,7 +785,7 @@ class TaskAssetsImport(APIView):
                 # Move
                 shutil.move(tmp_upload_file, destination_file)
 
-            worker_tasks.process_task.delay(task.id)
+        worker_tasks.process_task.delay(task.id)
 
         serializer = TaskSerializer(task)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
