@@ -194,8 +194,8 @@ def oidc_callback(request):
         user.last_name = family_name
         user.save()
         
-    if settings.OIDC_ASSIGN_GROUPS:
-        for groupClaim in settings.OIDC_ASSIGN_GROUPS:
+    if settings.OIDC_ASSIGN_GROUPS_FROM_CLAIMS:
+        for groupClaim in settings.OIDC_ASSIGN_GROUPS_FROM_CLAIMS:
             try:
                 groupName = claims.get(groupClaim)
                 groupToAdd = Group.objects.get(name=groupName)

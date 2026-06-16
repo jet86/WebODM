@@ -375,7 +375,9 @@ OIDC_AUTH_EMAILS = None
 OIDC_UPDATE_PROFILE = False
 
 # OIDC Claims to check for automatic group assignments
-OIDC_ASSIGN_GROUPS = []
+# List the names of the OIDC claims to check, the values returned in those claims should
+# be the names of the groups to be assigned
+OIDC_ASSIGN_GROUPS_FROM_CLAIMS = []
 
 # Enable cluster mode for this instance by setting an integer ID >= 1
 CLUSTER_ID = None
