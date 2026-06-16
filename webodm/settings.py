@@ -374,6 +374,9 @@ OIDC_AUTH_EMAILS = None
 # Will additionally request the profile OIDC scope
 OIDC_UPDATE_PROFILE = False
 
+# OIDC Claims to check for automatic group assignments
+OIDC_ASSIGN_GROUPS = []
+
 # Enable cluster mode for this instance by setting an integer ID >= 1
 CLUSTER_ID = None
 

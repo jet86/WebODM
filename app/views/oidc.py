@@ -5,6 +5,7 @@ import requests
 from django.contrib import messages
 from django.contrib.auth import login
 from django.contrib.auth.models import User
+from django.contrib.auth.models import Group
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.utils.crypto import get_random_string
@@ -144,6 +145,10 @@ def oidc_callback(request):
         logger.warning('OIDC userinfo request failed: %s', str(e))
         messages.warning(request, _('SSO login failed.'))
         return redirect(settings.LOGIN_URL)
+        
+#####
+    messages.info(request, 'Claims: %s' % claims)
+#####
 
     subject = claims.get('sub')
     email = claims.get('email', '').strip()
@@ -152,10 +157,6 @@ def oidc_callback(request):
         messages.warning(request, _('SSO login failed.'))
         return redirect(settings.LOGIN_URL)
 
-    if settings.OIDC_UPDATE_PROFILE:
-        given_name = claims.get('given_name')
-        family_name = claims.get('family_name')
-    
     # Check if it's authorized
     authorized = True
     if settings.OIDC_AUTH_EMAILS:
@@ -190,10 +191,21 @@ def oidc_callback(request):
         return redirect(settings.LOGIN_URL)
     
     if settings.OIDC_UPDATE_PROFILE:
+        given_name = claims.get('given_name')
+        family_name = claims.get('family_name')
         user.email = email
         user.first_name = given_name
         user.last_name = family_name
         user.save()
+        
+    if settings.OIDC_ASSIGN_GROUPS:
+        for groupClaim in settings.OIDC_ASSIGN_GROUPS:
+            try:
+                groupName = claims.get(groupClaim)
+                groupToAdd = Group.objects.get(name=groupName)
+                user.groups.add(groupToAdd)
+            except Group.DoesNotExist:
+                logger.warning('Group does not exist: %s' % groupName)
 
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
