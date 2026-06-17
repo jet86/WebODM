@@ -31,6 +31,10 @@ def has_oidc_auth():
     return len(get_oidc_providers()) > 0
 
 @register.simple_tag
+def html_after_body():
+    return settings.HTML_AFTER_BODY
+
+@register.simple_tag
 def oidc_auth_providers():
     return get_oidc_providers()
 
