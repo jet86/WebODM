@@ -925,7 +925,7 @@ class Task(models.Model):
                                 logger.info("Downloading all.zip for {}".format(self))
 
                                 # Download all assets
-                                zip_path = self.processing_node.download_task_assets(self.uuid, assets_dir, progress_callback=callback, parallel_downloads=max(1, int(16 / (2 ** retry_num))))
+                                zip_path = self.processing_node.download_task_assets(self.uuid, assets_dir, progress_callback=callback, parallel_downloads=max(1, int(settings.NODE_CONNECTIONS / (2 ** retry_num))))
 
                                 # Rename to all.zip
                                 all_zip_path = self.assets_path("all.zip")
