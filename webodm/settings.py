@@ -381,10 +381,10 @@ OIDC_CUSTOM_SCOPES = []
 # OIDC Claims to check for automatic group assignments
 # List the names of the OIDC claims to check, the values returned in those claims should
 # be the names of the groups to be assigned
-OIDC_ASSIGN_GROUPS_FROM_CLAIMS = []
+OIDC_GROUPS_CLAIMS = []
 
 # Create any groups returned in the claims listed in OIDC_ASSIGN_GROUPS_FROM_CLAIMS that don't exist
-OIDC_CREATE_MISSING_GROUPS = False
+OIDC_CREATE_GROUPS = False
 
 # Enable cluster mode for this instance by setting an integer ID >= 1
 CLUSTER_ID = None
