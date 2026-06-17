@@ -20,6 +20,7 @@ class TestNet(TestCase):
         self.assertEqual(ul3conn.create_connection, net.create_connection_orig)
 
         # Success patch
+        settings.DNS_RESOLUTION_FALLBACK = ["8.8.8.8"]
         self.assertTrue(net.patch_dns_resolution())
 
         self.assertTrue(net.patched)
