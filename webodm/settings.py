@@ -322,7 +322,6 @@ REST_FRAMEWORK = {
 
 JWT_AUTH = {
     'JWT_EXPIRATION_DELTA': datetime.timedelta(hours=6),
-    'JWT_ALLOW_REFRESH': True,
 }
 
 # Celery
@@ -372,13 +371,19 @@ OIDC_AUTH_PROVIDERS = []
 OIDC_AUTH_EMAILS = None
 
 # When turned on, updates the user's profile information in WebODM from OIDC profile data
-# Will additionally request the profile OIDC scope
+# Will additionally request the "profile" OIDC scope
 OIDC_UPDATE_PROFILE = False
+
+# List any custom OIDC scopes needed for custom claims
+OIDC_CUSTOM_SCOPES = []
 
 # OIDC Claims to check for automatic group assignments
 # List the names of the OIDC claims to check, the values returned in those claims should
 # be the names of the groups to be assigned
 OIDC_ASSIGN_GROUPS_FROM_CLAIMS = []
+
+# Create any groups returned in the claims listed in OIDC_ASSIGN_GROUPS_FROM_CLAIMS that don't exist
+OIDC_CREATE_MISSING_GROUPS = False
 
 # Enable cluster mode for this instance by setting an integer ID >= 1
 CLUSTER_ID = None

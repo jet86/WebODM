@@ -71,8 +71,12 @@ def oidc_login(request, provider_index):
     }
     
     if settings.OIDC_UPDATE_PROFILE:
-        params['scope'] = 'openid email profile'
-        
+        params['scope'] += ' ' + 'profile'
+
+    if settings.OIDC_CUSTOM_SCOPES:
+        for customScope in settings.OIDC_CUSTOM_SCOPES:
+            params['scope'] += ' ' + customScope
+
     return redirect('%s?%s' % (provider['auth_endpoint'], urlencode(params)))
 
 
@@ -196,12 +200,29 @@ def oidc_callback(request):
         
     if settings.OIDC_ASSIGN_GROUPS_FROM_CLAIMS:
         for groupClaim in settings.OIDC_ASSIGN_GROUPS_FROM_CLAIMS:
-            try:
-                groupName = claims.get(groupClaim)
-                groupToAdd = Group.objects.get(name=groupName)
-                user.groups.add(groupToAdd)
-            except Group.DoesNotExist:
-                logger.warning('Group does not exist: %s' % groupName)
+            groupNames = claims.get(groupClaim)
+            if isinstance(groupNames, list):
+                for groupName in groupNames:
+                    try:
+                        groupToAdd = Group.objects.get(name=groupName)
+                        user.groups.add(groupToAdd)
+                    except Group.DoesNotExist:
+                        logger.warning('Group does not exist: %s' % groupName)
+                        if settings.OIDC_CREATE_MISSING_GROUPS:
+                            groupToAdd = Group.objects.create(name=groupName)
+                            logger.info('Group created: %s' % groupName)
+                            user.groups.add(groupToAdd)
+            elif isinstance(groupNames, str):
+                groupName = groupNames
+                try:
+                    groupToAdd = Group.objects.get(name=groupName)
+                    user.groups.add(groupToAdd)
+                except Group.DoesNotExist:
+                    logger.warning('Group does not exist: %s' % groupName)
+                    if settings.OIDC_CREATE_MISSING_GROUPS:
+                        groupToAdd = Group.objects.create(name=groupName)
+                        logger.info('Group created: %s' % groupName)
+                        user.groups.add(groupToAdd)
 
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
