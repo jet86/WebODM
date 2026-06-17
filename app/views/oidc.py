@@ -145,10 +145,6 @@ def oidc_callback(request):
         logger.warning('OIDC userinfo request failed: %s', str(e))
         messages.warning(request, _('SSO login failed.'))
         return redirect(settings.LOGIN_URL)
-        
-#####
-    messages.info(request, 'Claims: %s' % claims)
-#####
 
     subject = claims.get('sub')
     email = claims.get('email', '').strip()
