@@ -360,6 +360,9 @@ NODE_OFFLINE_MINUTES = 5
 # and assumes that all nodes are always online, avoiding polling
 NODE_OPTIMISTIC_MODE = False
 
+# Number of parallel connections for uploading/downloading to/from processing nodes
+NODE_CONNECTIONS = 4
+
 # URL to external auth endpoint
 EXTERNAL_AUTH_ENDPOINT = ''
 

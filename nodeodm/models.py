@@ -137,7 +137,7 @@ class ProcessingNode(models.Model):
 
         opts = self.options_list_to_dict(options)
 
-        task = api_client.create_task(images, opts, name, progress_callback)
+        task = api_client.create_task(images, opts, name, progress_callback, parallel_uploads=settings.NODE_CONNECTIONS)
         return task.uuid
 
     def get_task_info(self, uuid, with_output=None):
