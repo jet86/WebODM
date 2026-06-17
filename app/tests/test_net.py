@@ -13,16 +13,14 @@ class TestNet(TestCase):
 
         # DNS fallback turned off by default
         self.assertIsNone(settings.DNS_RESOLUTION_FALLBACK)
-        self.assertFalse(net.is_dns_resolution_problem(Exception("[Errno 11002] Lookup timed out")))
-
-        settings.DNS_RESOLUTION_FALLBACK = ["8.8.8.8"]
         self.assertTrue(net.is_dns_resolution_problem(Exception("[Errno 11002] Lookup timed out")))
         self.assertFalse(net.is_dns_resolution_problem(Exception("Some other error")))
-        
+
         self.assertFalse(net.patched)
         self.assertEqual(ul3conn.create_connection, net.create_connection_orig)
 
         # Success patch
+        settings.DNS_RESOLUTION_FALLBACK = ["8.8.8.8"]
         self.assertTrue(net.patch_dns_resolution())
 
         self.assertTrue(net.patched)

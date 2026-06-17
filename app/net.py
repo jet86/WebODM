@@ -7,12 +7,14 @@ patched = False
 create_connection_orig = ul3conn.create_connection
 
 def is_dns_resolution_problem(e):
-    if settings.DNS_RESOLUTION_FALLBACK:
-        return "[Errno 11002] Lookup timed out" in str(e) #or "[Errno 111] Connection refused" in str(e)
-    return False
+    return "[Errno 11002] Lookup timed out" in str(e) #or "[Errno 111] Connection refused" in str(e)
 
 def patch_dns_resolution():
     global patched
+    
+    if not settings.DNS_RESOLUTION_FALLBACK:
+        return False # Don't patch
+
     if patched:
         return False # Already enabled
 
