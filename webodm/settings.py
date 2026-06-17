@@ -383,7 +383,7 @@ OIDC_CUSTOM_SCOPES = []
 # be the names of the groups to be assigned
 OIDC_GROUPS_CLAIMS = []
 
-# Create any groups returned in the claims listed in OIDC_ASSIGN_GROUPS_FROM_CLAIMS that don't exist
+# Create any groups returned in the claims listed in OIDC_GROUPS_CLAIMS that don't exist
 OIDC_CREATE_GROUPS = False
 
 # Enable cluster mode for this instance by setting an integer ID >= 1
