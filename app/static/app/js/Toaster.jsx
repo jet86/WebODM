@@ -144,8 +144,7 @@ class ToasterTask extends React.Component {
     handleTaskClick = (task) => {
         return () => {
             if (task.link){
-                location.href = task.link;
-                this.onRemove();
+                window.open(task.link);
             }
         }
     }
@@ -160,6 +159,13 @@ class ToasterTask extends React.Component {
         let label = task.name;
         if (task.error) label = `${task.name} - ${task.error}`;
 
+        let iconTitle = task.error || task.status || task.name;
+        let labelTitle = label;
+
+        if (task.link){
+            iconTitle = labelTitle = task.link;
+        }
+
         let background = "";
         if (task.progress !== undefined) {
             if (shouldCheck(task)){
@@ -170,7 +176,7 @@ class ToasterTask extends React.Component {
 
         return <div className="toaster-task theme-border-highlight-9" style={{background}}>
             <div className="toaster-task-label" onClick={this.handleTaskClick(task)}>
-                <i className={icon} title={task.error || task.status || task.name}></i> <div title={label} className="task-toaster-label-text">{label}</div>
+                <i className={icon} title={iconTitle}></i> <div title={labelTitle} className="task-toaster-label-text">{label}</div>
             </div>
             <a href="javascript:void(0);" className="toaster-btn toaster-btn-close theme-background-highlight-8-hover" onClick={this.onRemove}><i className="fa fa-times"></i></a>
         </div>;
