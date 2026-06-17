@@ -50,7 +50,7 @@ class Plugin(PluginBase):
 
             if request.user.is_authenticated:
                 uds = self.get_user_data_store(request.user)
-                share_enabled = uds.get_bool("share_enabled")
+                share_enabled = uds.get_bool("share_enabled", True)
                 api_key = uds.get_string("api_key")
             
             return render(
@@ -134,7 +134,7 @@ class Plugin(PluginBase):
         @login_required
         def get_share_buttons_prefs(request):
             uds = UserDataStore('lightning', request.user)
-            return JsonResponse({'enabled': uds.get_bool("share_enabled")})
+            return JsonResponse({'enabled': uds.get_bool("share_enabled", True)})
 
         return [
             MountPoint('$', main),
