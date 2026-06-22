@@ -24,8 +24,8 @@ from rest_framework import status
 
 VALID_IMAGE_EXTENSIONS = ['.tiff', '.tif', '.png', '.jpeg', '.jpg']
 
-# Regex pattern for valid tag format: "org" or "org/dataset" with lowercase alphanumeric and hyphens
-TAG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9\-]*(/[a-z0-9][a-z0-9\-]*)?$')
+# Regex pattern for valid tag format: "org/dataset" with lowercase alphanumeric and hyphens (both parts required)
+TAG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9\-]*/[a-z0-9][a-z0-9\-]*$')
 
 def is_valid(file):
     _, file_extension = path.splitext(file)
@@ -336,9 +336,13 @@ class ShareTaskView(TaskView):
         org_slug = request.data.get('orgSlug', None)
         dataset_name = request.data.get('datasetName', None) or task.name
 
+        # Normalize blank tag to None
+        if tag is not None:
+            tag = tag.strip() or None
+
         # Validate tag format if provided (must be "org/dataset")
-        if tag is not None and tag.strip():
-            tag = tag.strip().lower()
+        if tag is not None:
+            tag = tag.lower()
             if not TAG_PATTERN.match(tag):
                 return Response({
                     'error': 'Invalid tag format. Must be "org/dataset" with lowercase alphanumeric characters and hyphens only.'
@@ -441,7 +445,7 @@ def share_to_ddb(pk, settings, files, tag=None, org_slug=None, dataset_name=None
                 except Exception as e:
 
                     if (attempt == 3):
-                        raise
+                        raise Exception("Failed to upload file {}: {}".format(file['name'], str(e))) from e
                     else:
                         logger.info("Error uploading file {}: {}. Retrying...".format(file['name'], str(e)))
                         time.sleep(5)
