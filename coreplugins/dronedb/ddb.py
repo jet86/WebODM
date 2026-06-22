@@ -173,10 +173,12 @@ class DroneDB:
                 if entry_type == 1 and path:
                     dirs.add(path)
                 else:
-                    # Infer parent directory from file path
-                    parent = posixpath.dirname(path)
-                    if parent and parent != '.':
-                        dirs.add(parent)
+                    # Infer all ancestor directories from file path
+                    parts = path.split('/')
+                    for i in range(1, len(parts)):
+                        ancestor = '/'.join(parts[:i])
+                        if ancestor and ancestor != '.':
+                            dirs.add(ancestor)
 
             return sorted(dirs)
 
