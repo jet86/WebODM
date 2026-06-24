@@ -155,13 +155,32 @@ class DroneDB:
     def get_folders(self, orgSlug, dsSlug):
 
         try:
+            import posixpath
 
-            # Type 1 is folder
-            payload = {'query': '*', 'recursive': True, 'type': 1}
+            # Search all entries recursively (no type filter)
+            payload = {'query': '*', 'recursive': True}
 
             response = self.wrapped_call('POST', self.__get_folders_url.format(orgSlug, dsSlug), data=payload)
 
-            return [o['path'] for o in response.json()]
+            entries = response.json()
+            dirs = set()
+
+            for o in entries:
+                path = o.get('path', '')
+                entry_type = o.get('type', 0)
+
+                # Include explicit Directory entries (type=1)
+                if entry_type == 1 and path:
+                    dirs.add(path)
+                else:
+                    # Infer all ancestor directories from file path
+                    parts = path.split('/')
+                    for i in range(1, len(parts)):
+                        ancestor = '/'.join(parts[:i])
+                        if ancestor and ancestor != '.':
+                            dirs.add(ancestor)
+
+            return sorted(dirs)
 
         except Exception as e:
             raise Exception("Failed to get folders.") from e
@@ -193,12 +212,14 @@ class DroneDB:
         except Exception as e:
             raise Exception("Failed to get files list.") from e
 
-    def share_init(self, tag=None, dataset_name=None):
+    def share_init(self, tag=None, org_slug=None, dataset_name=None):
         try:
 
             data = {}
             if tag is not None:
                 data['tag'] = tag
+            if org_slug is not None:
+                data['orgSlug'] = org_slug
             if dataset_name is not None:
                 data['datasetName'] = dataset_name
 

@@ -178,4 +178,5 @@ $(function(){
 </script>
 <script src="{% static 'app/js/vendor/bootstrap.min.js' %}"></script>
 {{ SETTINGS.theme.html_after_body|safe }}
+{% html_after_body as code %}{{ code|safe }}
 </html>

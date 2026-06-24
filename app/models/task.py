@@ -925,7 +925,7 @@ class Task(models.Model):
                                 logger.info("Downloading all.zip for {}".format(self))
 
                                 # Download all assets
-                                zip_path = self.processing_node.download_task_assets(self.uuid, assets_dir, progress_callback=callback, parallel_downloads=max(1, int(16 / (2 ** retry_num))))
+                                zip_path = self.processing_node.download_task_assets(self.uuid, assets_dir, progress_callback=callback, parallel_downloads=max(1, int(settings.NODE_CONNECTIONS / (2 ** retry_num))))
 
                                 # Rename to all.zip
                                 all_zip_path = self.assets_path("all.zip")
@@ -956,8 +956,15 @@ class Task(models.Model):
                         self.save()
 
         except (NodeServerError, NodeResponseError) as e:
-            if is_dns_resolution_problem(e) and patch_dns_resolution():
-                logger.warning("{} DNS resolution failed with {}, we're going to attempt to patch the DNS resolution process and retry...".format(self, str(e)))
+            if is_dns_resolution_problem(e):
+                logger.warning("{} DNS resolution failed with {}".format(self, str(e)))
+                
+                if patch_dns_resolution():
+                    logger.warning("Patched the DNS resolution process")
+                else:
+                    # Pause before unlocking the task, this gives more time to the faulty DNS to recover
+                    logger.warning("Pausing for 30 seconds to give the DNS time to recover")
+                    time.sleep(30)
             else:
                 self.set_failure(str(e))
         except NodeConnectionError as e:

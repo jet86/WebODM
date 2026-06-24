@@ -22,3 +22,9 @@ WebODM is licensed under the terms of the [GNU Affero General Public License v3.
 # Trademark
 
 See [Trademark Guidelines](https://github.com/WebODM/WebODM/blob/master/TRADEMARK.md)
+
+# Notes
+
+ * WebODM is [not affiliated with OpenDroneMap](https://webodm.org/blog/announcement/) and is not a user interface to OpenDroneMap
+ * For processing, WebODM uses [ODX](https://github.com/WebODM/ODX), not ODM
+ * Official, up-to-date WebODM installers [are free](https://webodm.org/download) to download and make installation a breeze. If you paid for an installer after April 2026, you bought a different software

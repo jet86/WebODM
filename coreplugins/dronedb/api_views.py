@@ -11,7 +11,7 @@ from os import listdir, path
 from app import models, pending_actions
 from app.security import path_traversal_check
 from app.plugins.views import TaskView
-from app.plugins.worker import run_function_async, task
+from app.plugins.worker import run_function_async
 from app.plugins import get_current_plugin
 from app.plugins import GlobalDataStore, get_site_settings, signals as plugin_signals
 
@@ -19,14 +19,13 @@ from coreplugins.dronedb.ddb import DEFAULT_HUB_URL, DroneDB, parse_url, verify_
 
 from django.dispatch import receiver
 
-from worker.celery import app
 from rest_framework.response import Response
 from rest_framework import status
 
 VALID_IMAGE_EXTENSIONS = ['.tiff', '.tif', '.png', '.jpeg', '.jpg']
 
-# Regex pattern for valid tag format: "org" or "org/dataset" with lowercase alphanumeric and hyphens
-TAG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9\-]*(/[a-z0-9][a-z0-9\-]*)?$')
+# Regex pattern for valid tag format: "org/dataset" with lowercase alphanumeric and hyphens (both parts required)
+TAG_PATTERN = re.compile(r'^[a-z0-9][a-z0-9\-]*/[a-z0-9][a-z0-9\-]*$')
 
 def is_valid(file):
     _, file_extension = path.splitext(file)
@@ -332,17 +331,32 @@ class ShareTaskView(TaskView):
 
         task = self.get_and_check_task(request, pk)
 
-        # Get optional tag and datasetName from request
+        # Get optional tag, orgSlug and datasetName from request
         tag = request.data.get('tag', None)
+        org_slug = request.data.get('orgSlug', None)
         dataset_name = request.data.get('datasetName', None) or task.name
 
-        # Validate tag format if provided
-        if tag is not None and tag.strip():
-            tag = tag.strip().lower()
+        # Normalize blank tag to None
+        if tag is not None:
+            tag = tag.strip() or None
+
+        # Validate tag format if provided (must be "org/dataset")
+        if tag is not None:
+            tag = tag.lower()
             if not TAG_PATTERN.match(tag):
                 return Response({
-                    'error': 'Invalid tag format. Must be "org" or "org/dataset" with lowercase alphanumeric characters and hyphens only.'
+                    'error': 'Invalid tag format. Must be "org/dataset" with lowercase alphanumeric characters and hyphens only.'
                 }, status=status.HTTP_400_BAD_REQUEST)
+
+        # Validate orgSlug if provided
+        if org_slug is not None and org_slug.strip():
+            org_slug = org_slug.strip().lower()
+            if not re.match(r'^[a-z0-9][a-z0-9\-]*$', org_slug):
+                return Response({
+                    'error': 'Invalid org slug format.'
+                }, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            org_slug = None
 
         # Sanitize dataset_name (remove potentially dangerous characters)
         if dataset_name:
@@ -376,78 +390,78 @@ class ShareTaskView(TaskView):
 
         files = [{'path': f, 'name': f[len(assets_path)+1:], 'size': os.path.getsize(f)} for f in available_assets]
 
-        share_to_ddb.delay(pk, settings, files, tag, dataset_name)
+        run_function_async(share_to_ddb, pk, settings, files, tag, org_slug, dataset_name)
 
         return Response(data, status=status.HTTP_200_OK)
 
 
-@task
-def share_to_ddb(pk, settings, files, tag=None, dataset_name=None):
-
+def share_to_ddb(pk, settings, files, tag=None, org_slug=None, dataset_name=None):
+    import os, time
     from app.plugins import logger
+    from app.plugins.functions import get_plugin_by_name
+    from coreplugins.dronedb.ddb import DroneDB
 
-    status_key = get_status_key(pk)
-    datastore = get_current_plugin().get_global_data_store()
+    status_key = '{}_ddb'.format(pk)
+    datastore = get_plugin_by_name('dronedb').get_global_data_store()
 
     registry_url, username, password, token = settings
 
     ddb = DroneDB(registry_url, username, password, token)
 
-    # Init share with optional tag and dataset name
-    share_token = ddb.share_init(tag=tag, dataset_name=dataset_name)
-
     status = datastore.get_json(status_key)
-
     status['totalFiles'] = len(files)
     status['totalSize'] = sum(i['size'] for i in files)
-
     datastore.set_json(status_key, status)
 
-    for file in files:
+    try:
+        # Init share with optional tag, orgSlug and dataset name
+        share_token = ddb.share_init(tag=tag, org_slug=org_slug, dataset_name=dataset_name)
 
-        # check that file exists
-        if not os.path.exists(file['path']):
-            logger.info("File {} does not exist".format(file['path']))
-            continue
+        for file in files:
 
-        attempt = 0
+            # check that file exists
+            if not os.path.exists(file['path']):
+                logger.info("File {} does not exist".format(file['path']))
+                continue
 
-        while attempt < 3:
-            try:
+            attempt = 0
 
-                attempt += 1
+            while attempt < 3:
+                try:
 
-                up = ddb.share_upload(share_token, file['path'], file['name'])
+                    attempt += 1
 
-                logger.info("Uploaded " + file['name'] + " to Dronedb (hash: " + up['hash'] + ")")
+                    up = ddb.share_upload(share_token, file['path'], file['name'])
 
-                status['uploadedFiles'] += 1
-                status['uploadedSize'] += file['size']
+                    logger.info("Uploaded " + file['name'] + " to Dronedb (hash: " + up['hash'] + ")")
 
-                datastore.set_json(status_key, status)
+                    status['uploadedFiles'] += 1
+                    status['uploadedSize'] += file['size']
 
-                break
-
-            except Exception as e:
-
-                if (attempt == 3):
-                    logger.error("Error uploading file {}: {}".format(file['name'], str(e)))
-                    status['error'] = "Error uploading file {}: {}".format(file['name'], str(e))
-                    status['status'] = 2 # Error
                     datastore.set_json(status_key, status)
-                    return
-                else:
-                    logger.info("Error uploading file {}: {}. Retrying...".format(file['name'], str(e)))
-                    time.sleep(5)
-                    continue
 
+                    break
 
-    res = ddb.share_commit(share_token)
+                except Exception as e:
 
-    status['status'] = 3 # Done
-    status['shareUrl'] = registry_url + res['url']
+                    if (attempt == 3):
+                        raise Exception("Failed to upload file {}: {}".format(file['name'], str(e))) from e
+                    else:
+                        logger.info("Error uploading file {}: {}. Retrying...".format(file['name'], str(e)))
+                        time.sleep(5)
+                        continue
 
-    logger.info("Shared on url " + status['shareUrl'])
+        res = ddb.share_commit(share_token)
+
+        status['status'] = 3  # Done
+        status['shareUrl'] = registry_url + res['url']
+
+        logger.info("Shared on url " + status['shareUrl'])
+
+    except Exception as e:
+        logger.error("Error sharing to DroneDB: {}".format(str(e)))
+        status['status'] = 2  # Error
+        status['error'] = str(e)
 
     datastore.set_json(status_key, status)
 
