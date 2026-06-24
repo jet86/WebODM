@@ -1179,7 +1179,8 @@ class Task(models.Model):
                     'orthophoto_bands': self.orthophoto_bands,
                     'crop': self.crop is not None,
                     'extent': self.get_extent(),
-                    'media': media
+                    'media': media,
+                    'tiles': types,
                 }
             }
         }
