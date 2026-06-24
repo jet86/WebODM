@@ -40,6 +40,10 @@
     }
 
     .leaflet-popup-content{
+        &.leaflet-popup-scrolled{
+            border-top: none;
+            border-bottom: none;
+        }
         .title{
             font-weight: bold;
             margin-bottom: 8px;
