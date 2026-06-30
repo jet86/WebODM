@@ -74,8 +74,8 @@ def oidc_login(request, provider_index):
         params['scope'] += ' ' + 'profile'
 
     if settings.OIDC_CUSTOM_SCOPES:
-        for customScope in settings.OIDC_CUSTOM_SCOPES:
-            params['scope'] += ' ' + customScope
+        for custom_scope in settings.OIDC_CUSTOM_SCOPES:
+            params['scope'] += ' ' + custom_scope
 
     return redirect('%s?%s' % (provider['auth_endpoint'], urlencode(params)))
 
@@ -191,45 +191,44 @@ def oidc_callback(request):
         return redirect(settings.LOGIN_URL)
 
     if settings.OIDC_UPDATE_PROFILE:
-        given_name = claims.get('given_name')
-        family_name = claims.get('family_name')
+        given_name = claims.get('given_name', '')
+        family_name = claims.get('family_name', '')
         user.email = email
         user.first_name = given_name
         user.last_name = family_name
         user.save()
 
     if settings.OIDC_GROUPS_CLAIMS:   
-        usersGroupsOIDC = []
-        for groupClaim in settings.OIDC_GROUPS_CLAIMS:
-            groupNames = claims.get(groupClaim)
-            if isinstance(groupNames, list):
-                for groupName in groupNames:
+        groups_OIDC = []
+        for claim in settings.OIDC_GROUPS_CLAIMS:
+            group_names = claims.get(claim)
+            if isinstance(group_names, list):
+                for group_name in group_names:
                     try:
-                        usersGroupsOIDC.append(groupName)
-                        groupToAdd = Group.objects.get(name=groupName)
-                        user.groups.add(groupToAdd)
+                        groups_OIDC.append(group_name)
+                        group_to_add = Group.objects.get(name=group_name)
+                        user.groups.add(group_to_add)
                     except Group.DoesNotExist:
-                        logger.warning('Group does not exist: %s' % groupName)
+                        logger.warning('Group does not exist: %s' % group_name)
                         if settings.OIDC_CREATE_GROUPS:
-                            groupToAdd = Group.objects.create(name=groupName)
-                            logger.info('Group created: %s' % groupName)
-                            user.groups.add(groupToAdd)
-            elif isinstance(groupNames, str):
-                groupName = groupNames
+                            group_to_add, _ = Group.objects.get_or_create(name=group_name)
+                            logger.info('Group created: %s' % group_name)
+                            user.groups.add(group_to_add)
+            elif isinstance(group_names, str):
+                group_name = group_names
                 try:
-                    usersGroupsOIDC.append(groupName)
-                    groupToAdd = Group.objects.get(name=groupName)
-                    user.groups.add(groupToAdd)
+                    groups_OIDC.append(group_name)
+                    group_to_add = Group.objects.get(name=group_name)
+                    user.groups.add(group_to_add)
                 except Group.DoesNotExist:
-                    logger.warning('Group does not exist: %s' % groupName)
+                    logger.warning('Group does not exist: %s' % group_name)
                     if settings.OIDC_CREATE_GROUPS:
-                        groupToAdd = Group.objects.create(name=groupName)
-                        logger.info('Group created: %s' % groupName)
-                        user.groups.add(groupToAdd)
-        for eachGroup in user.groups.all():
-            if (eachGroup.name != 'Default') and (eachGroup.name not in settings.OIDC_IGNORE_GROUPS) and (eachGroup.name not in usersGroupsOIDC):
-                groupToRemove = Group.objects.get(name=eachGroup.name)
-                user.groups.remove(groupToRemove)
+                        group_to_add, _ = Group.objects.get_or_create(name=group_name)
+                        logger.info('Group created: %s' % group_name)
+                        user.groups.add(group_to_add)
+        for group in list(user.groups.all()):
+            if (group.name != 'Default') and (group.name not in settings.OIDC_IGNORE_GROUPS) and (group.name not in groups_OIDC):
+                user.groups.remove(group)
 
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
