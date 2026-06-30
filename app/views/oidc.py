@@ -168,7 +168,7 @@ def oidc_callback(request):
             elif ae == email:
                 authorized = True
                 break
-    
+
     if not authorized:
         logger.warning('OIDC email not authorized: %s' % email)
         messages.warning(request, _('SSO login failed.'))
@@ -189,7 +189,7 @@ def oidc_callback(request):
     if not user.is_active:
         messages.warning(request, _('This account is disabled. Please contact an administrator.'))
         return redirect(settings.LOGIN_URL)
-    
+
     if settings.OIDC_UPDATE_PROFILE:
         given_name = claims.get('given_name')
         family_name = claims.get('family_name')
@@ -197,13 +197,15 @@ def oidc_callback(request):
         user.first_name = given_name
         user.last_name = family_name
         user.save()
-        
-    if settings.OIDC_GROUPS_CLAIMS:
+
+    if settings.OIDC_GROUPS_CLAIMS:   
+        usersGroupsOIDC = []
         for groupClaim in settings.OIDC_GROUPS_CLAIMS:
             groupNames = claims.get(groupClaim)
             if isinstance(groupNames, list):
                 for groupName in groupNames:
                     try:
+                        usersGroupsOIDC.append(groupName)
                         groupToAdd = Group.objects.get(name=groupName)
                         user.groups.add(groupToAdd)
                     except Group.DoesNotExist:
@@ -215,6 +217,7 @@ def oidc_callback(request):
             elif isinstance(groupNames, str):
                 groupName = groupNames
                 try:
+                    usersGroupsOIDC.append(groupName)
                     groupToAdd = Group.objects.get(name=groupName)
                     user.groups.add(groupToAdd)
                 except Group.DoesNotExist:
@@ -223,6 +226,10 @@ def oidc_callback(request):
                         groupToAdd = Group.objects.create(name=groupName)
                         logger.info('Group created: %s' % groupName)
                         user.groups.add(groupToAdd)
+        for eachGroup in user.groups.all():
+            if (eachGroup.name != 'Default') and (eachGroup.name not in settings.OIDC_IGNORE_GROUPS) and (eachGroup.name not in usersGroupsOIDC):
+                groupToRemove = Group.objects.get(name=eachGroup.name)
+                user.groups.remove(groupToRemove)
 
     login(request, user, backend='django.contrib.auth.backends.ModelBackend')
 
