@@ -211,7 +211,7 @@ def oidc_callback(request):
                     except Group.DoesNotExist:
                         logger.warning('Group does not exist: %s' % group_name)
                         if settings.OIDC_CREATE_GROUPS:
-                            group_to_add, _ = Group.objects.get_or_create(name=group_name)
+                            group_to_add, added = Group.objects.get_or_create(name=group_name)
                             logger.info('Group created: %s' % group_name)
                             user.groups.add(group_to_add)
             elif isinstance(group_names, str):
@@ -223,7 +223,7 @@ def oidc_callback(request):
                 except Group.DoesNotExist:
                     logger.warning('Group does not exist: %s' % group_name)
                     if settings.OIDC_CREATE_GROUPS:
-                        group_to_add, _ = Group.objects.get_or_create(name=group_name)
+                        group_to_add, added = Group.objects.get_or_create(name=group_name)
                         logger.info('Group created: %s' % group_name)
                         user.groups.add(group_to_add)
         for group in list(user.groups.all()):
